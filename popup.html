@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        width: 320px;
+        padding: 16px;
+        background: #f7f7f7;
+        margin: 0;
+        color: #222;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin-bottom: 12px;
+        color: #0a66c2; /* LinkedIn blue */
+        text-align: center;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      #start {
+        background: #0a66c2;
+        color: white;
+        margin-bottom: 14px;
+      }
+      #start:hover {
+        background: #004182;
+      }
+
+      #download {
+        background: #059669;
+        color: white;
+        margin-top: 12px;
+      }
+      #download:hover {
+        background: #047857;
+      }
+
+      #status {
+        background: white;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+        border-left: 4px solid #0a66c2;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Recruiter Scraper</h1>
+
+    <button id="start">Scrape my connections</button>
+
+    <div id="status">Ready</div>
+
+    <button id="download" style="display: none">Download CSV</button>
+    <button id="scrapeLinkedIn">Get LinkedIn URL</button>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
