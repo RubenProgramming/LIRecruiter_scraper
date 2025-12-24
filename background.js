@@ -2,6 +2,10 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("Background loaded");
 });
 
+chrome.webNavigation.onCompleted.addListener(() => {
+  console.log("Navigation done.");
+});
+
 // inject content.js on ANY linkedin page load
 chrome.webNavigation.onCompleted.addListener((details) => {
   if (details.url.includes("linkedin.com")) {

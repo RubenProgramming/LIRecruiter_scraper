@@ -1,19 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Recruiter Scraper",
+  "name": "Recruiter Profile Capture",
   "version": "1.0",
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "webNavigation"
+  "description": "Capture LinkedIn profile URLs from Recruiter projects while scrolling",
+  "permissions": ["storage", "activeTab", "scripting", "downloads"],
+  "host_permissions": [
+    "https://www.linkedin.com/*"
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_popup": "popup.html"
   },
-  "host_permissions": [
-    "*://www.linkedin.com/*"
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/talent/*"],
+      "js": ["content.js"]
+    }
   ]
 }

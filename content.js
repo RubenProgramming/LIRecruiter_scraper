@@ -1,205 +1,103 @@
-//------------------------------------------------------
-// Utility wait()
-//------------------------------------------------------
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+let capturing = false;
+let profiles = new Map();
 
-//------------------------------------------------------
-// Find the “Meer laden” button by checking the SPAN text
-//------------------------------------------------------
-function findLoadMoreButton() {
-  const spans = document.querySelectorAll("button span");
+/**
+ * Extract name from a candidate card
+ */
+function extractNameFromCard(card) {
+  if (!card) return "";
 
-  for (const span of spans) {
-    if (!span.innerText) continue;
+  // Primary: name inside <a>
+  const nameLink = card.querySelector(
+    ".artdeco-entity-lockup__title a"
+  );
 
-    const txt = span.innerText.trim().toLowerCase();
-    if (txt.includes("meer laden")) {
-      return span.closest("button");
-    }
+  if (nameLink) {
+    return nameLink.textContent
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  return null;
-}
+  // Fallback: text directly in title div
+  const nameDiv = card.querySelector(
+    ".artdeco-entity-lockup__title"
+  );
 
-//------------------------------------------------------
-// Click load-more buttons repeatedly
-//------------------------------------------------------
-async function clickLoadMoreButtons() {
-  let tries = 0;
-
-  while (tries < 10) {
-    const btn = findLoadMoreButton();
-
-    if (btn) {
-      console.log("CLICK: Meer laden");
-      btn.click();
-
-      chrome.runtime.sendMessage({
-        progress: "Clicked 'Meer laden'… loading more profiles…"
-      });
-
-      await wait(2000);
-      tries = 0;
-    } else {
-      tries++;
-      await wait(1500);
-    }
+  if (nameDiv) {
+    return nameDiv.textContent
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  console.log("No more 'Meer laden' buttons detected.");
+  return "";
 }
 
-//------------------------------------------------------
-// Auto-scroll the page until nothing more loads
-//------------------------------------------------------
-async function autoScroll() {
-  let lastHeight = 0;
-  let sameCount = 0;
+/**
+ * Main DOM extraction
+ */
+function extractProfilesFromDOM() {
+  if (!capturing) return;
 
-  while (true) {
-    window.scrollTo(0, document.body.scrollHeight);
-    await wait(2000);
+  const urlSpans = document.querySelectorAll(
+    'span[data-test-personal-info-profile-link-text]'
+  );
 
-    const newHeight = document.body.scrollHeight;
+  urlSpans.forEach(span => {
+    const rawUrl = span.textContent.trim();
+    if (!rawUrl.startsWith("https://www.linkedin.com/in/")) return;
 
-    if (newHeight === lastHeight) {
-      sameCount++;
-      if (sameCount >= 3) break;
-    } else {
-      sameCount = 0;
-    }
+    const url = rawUrl.split("?")[0];
+    if (profiles.has(url)) return;
 
-    lastHeight = newHeight;
+    // Scope to the candidate card
+    const card = span.closest(
+      '[data-test-search-result], li, div'
+    );
 
-    chrome.runtime.sendMessage({
-      progress: "Scrolling…"
-    });
-  }
-}
+    const name = extractNameFromCard(card);
 
-//------------------------------------------------------
-// SCRAPE: Extract full name + URL for each connection
-//------------------------------------------------------
-function scrapeConnections() {
-  // All recruiter profile links
-  const links = document.querySelectorAll('a[data-test-link-to-profile-link="true"]');
-
-  const results = [];
-
-  links.forEach(a => {
-    const recruiterUrl = a.href;
-    const fullName = a.innerText.trim();
-
-    if (!fullName || !recruiterUrl) return;
-
-    // Split first and last name
-    const parts = fullName.split(" ");
-    const firstName = parts.shift();
-    const lastName = parts.join(" ");
-
-    results.push({
-      fullName,
-      firstName,
-      lastName,
-      recruiterUrl
+    profiles.set(url, {
+      name,
+      url,
+      capturedAt: new Date().toISOString()
     });
   });
 
-  chrome.runtime.sendMessage({
-    progress: `Scraping LI Recruiter: Found ${results.length} profiles.`
+  chrome.storage.local.set({
+    recruiterProfiles: Array.from(profiles.values())
   });
-
-  return results;
 }
 
-function scrapePublicLinkedInUrl() {
-  // 1. Preferred: <span data-test-personal-info-profile-link-text>
-  let el = document.querySelector('span[data-test-personal-info-profile-link-text]');
-  if (el && el.innerText.includes("linkedin.com/in/")) {
-    return el.innerText.trim();
-  }
-
-  // 2. Sometimes inside an <a>
-  el = [...document.querySelectorAll("a")].find(a =>
-    a.href.includes("linkedin.com/in/")
-  );
-  if (el) return el.href.split("?")[0];
-
-  // 3. Sometimes inside an obfuscated span
-  el = [...document.querySelectorAll("span")].find(s =>
-    s.innerText.includes("linkedin.com/in/")
-  );
-  if (el) return el.innerText.trim();
-
-  // 4. Fallback: search entire body
-  const match = document.body.innerText.match(/https:\/\/www\.linkedin\.com\/in\/[^\s]+/);
-  if (match) return match[0];
-
-  return null;
-}
-
-function scrapeLinkedInUrlDirect() {
-  const el = document.querySelector('span[data-test-personal-info-profile-link-text]');
-
-  if (!el) {
-    console.log("LinkedIn URL span not found.");
-    return null;
-  }
-
-  const url = el.innerText.trim();
-  if (!url.includes("linkedin.com/in/")) return null;
-
-  return url.split("?")[0]; // clean tracking params
-}
-
-function scrapePublicLinkedInUrl() {
-  const el = document.querySelector('span[data-test-personal-info-profile-link-text]');
-  if (!el) {
-    console.log("No public LinkedIn URL found on this page.");
-    return null;
-  }
-
-  const url = el.innerText.trim();
-  if (!url.includes("linkedin.com/in/")) return null;
-
-  return url.split("?")[0]; // remove extra tracking parameters
-}
-
-
-//------------------------------------------------------
-// MAIN SCRAPER FLOW
-//------------------------------------------------------
-async function contentScriptMain() {
-  chrome.runtime.sendMessage({ progress: "Loading all connections…" });
-
-  await clickLoadMoreButtons();
-  await autoScroll();
-
-  chrome.runtime.sendMessage({ progress: "Collecting profile names…" });
-
-  const data = scrapeConnections();
-  return data;
-}
-
-//------------------------------------------------------
-// LISTENER from popup.js
-//------------------------------------------------------
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === "SCRAPE_CONNECTIONS") {
-    contentScriptMain().then(data => sendResponse(data));
-    return true;
-  }
+/**
+ * Observe DOM changes (lazy-loaded candidates)
+ */
+const observer = new MutationObserver(() => {
+  extractProfilesFromDOM();
 });
 
-console.log("CONTENT SCRIPT LOADED");
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === "SCRAPE_LI_FROM_RECRUITER") {
-    console.log("Scraping public LinkedIn URL from Recruiter page…");
-    const url = scrapePublicLinkedInUrl();
-    sendResponse({ linkedInUrl: url });
-  }
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
 });
 
+/**
+ * Messages from popup
+ */
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "START") {
+    capturing = true;
+    extractProfilesFromDOM();
+    sendResponse({ status: "started" });
+  }
+
+  if (msg.type === "STOP") {
+    capturing = false;
+    sendResponse({ status: "stopped" });
+  }
+
+  if (msg.type === "CLEAR") {
+    profiles.clear();
+    chrome.storage.local.remove("recruiterProfiles");
+    sendResponse({ status: "cleared" });
+  }
+});
