@@ -1,25 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <title>Recruiter Capture</title>
+
     <style>
       body {
-        font-family: Arial;
-        padding: 10px;
-        width: 220px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial;
+        padding: 12px;
+        width: 240px;
+        box-sizing: border-box;
       }
+
+      h1 {
+        font-size: 14px;
+        margin: 0 0 8px 0;
+      }
+
+      .counter {
+        font-size: 13px;
+        margin-bottom: 10px;
+        font-weight: 500;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
       button {
         width: 100%;
-        margin-bottom: 6px;
+        padding: 8px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .secondary {
+        background: #f2f2f2;
+        border: 1px solid #ccc;
+      }
+
+      .danger {
+        background: #ffecec;
+        border: 1px solid #ffb3b3;
       }
     </style>
   </head>
-  <body>
-    <button id="start">Start capture</button>
-    <button id="stop">Stop capture</button>
-    <button id="export">Export CSV</button>
-    <button id="clear">Clear data</button>
 
-    <div id="count">0 profiles</div>
+  <body>
+    <h1>Recruiter Capture</h1>
+
+    <div class="counter" id="count">0 profiles captured</div>
+
+    <div class="actions">
+      <button id="start">Start capturing</button>
+      <button id="stop" class="secondary">Stop capturing</button>
+      <button id="export">Export CSV</button>
+      <button id="clear" class="danger">Clear data</button>
+    </div>
 
     <script src="popup.js"></script>
   </body>

@@ -1,64 +1,27 @@
-let capturing = false;
 let profiles = new Map();
+let capturing = true; // automatisch aan
 
 /**
- * Extract name from a candidate card
+ * Extract recruiter profile links from DOM
  */
-function extractNameFromCard(card) {
-  if (!card) return "";
-
-  // Primary: name inside <a>
-  const nameLink = card.querySelector(
-    ".artdeco-entity-lockup__title a"
-  );
-
-  if (nameLink) {
-    return nameLink.textContent
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  // Fallback: text directly in title div
-  const nameDiv = card.querySelector(
-    ".artdeco-entity-lockup__title"
-  );
-
-  if (nameDiv) {
-    return nameDiv.textContent
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  return "";
-}
-
-/**
- * Main DOM extraction
- */
-function extractProfilesFromDOM() {
+function extractRecruiterProfileLinks() {
   if (!capturing) return;
 
-  const urlSpans = document.querySelectorAll(
-    'span[data-test-personal-info-profile-link-text]'
+  const links = document.querySelectorAll(
+    'a[data-test-link-to-profile-link="true"]'
   );
 
-  urlSpans.forEach(span => {
-    const rawUrl = span.textContent.trim();
-    if (!rawUrl.startsWith("https://www.linkedin.com/in/")) return;
+  links.forEach(a => {
+    const url = a.href;
+    if (!url || !url.includes("/talent/profile/")) return;
 
-    const url = rawUrl.split("?")[0];
-    if (profiles.has(url)) return;
+    // strip tracking if desired
+    const cleanUrl = url.split("&trk=")[0];
 
-    // Scope to the candidate card
-    const card = span.closest(
-      '[data-test-search-result], li, div'
-    );
+    if (profiles.has(cleanUrl)) return;
 
-    const name = extractNameFromCard(card);
-
-    profiles.set(url, {
-      name,
-      url,
+    profiles.set(cleanUrl, {
+      url: cleanUrl,
       capturedAt: new Date().toISOString()
     });
   });
@@ -69,10 +32,10 @@ function extractProfilesFromDOM() {
 }
 
 /**
- * Observe DOM changes (lazy-loaded candidates)
+ * Observe DOM for lazy-loaded candidates
  */
 const observer = new MutationObserver(() => {
-  extractProfilesFromDOM();
+  extractRecruiterProfileLinks();
 });
 
 observer.observe(document.body, {
@@ -84,15 +47,15 @@ observer.observe(document.body, {
  * Messages from popup
  */
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "START") {
-    capturing = true;
-    extractProfilesFromDOM();
-    sendResponse({ status: "started" });
-  }
-
   if (msg.type === "STOP") {
     capturing = false;
     sendResponse({ status: "stopped" });
+  }
+
+  if (msg.type === "START") {
+    capturing = true;
+    extractRecruiterProfileLinks();
+    sendResponse({ status: "started" });
   }
 
   if (msg.type === "CLEAR") {
@@ -101,3 +64,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ status: "cleared" });
   }
 });
+
+// initial scan (voor wat al zichtbaar is)
+extractRecruiterProfileLinks();

@@ -29,8 +29,8 @@ document.getElementById("clear").onclick = () => {
 document.getElementById("export").onclick = () => {
   chrome.storage.local.get("recruiterProfiles", data => {
     const rows = data.recruiterProfiles || [];
-    let csv = "linkedin_url\n";
 
+    let csv = "recruiter_profile_url\n";
     rows.forEach(r => {
       csv += `"${r.url}"\n`;
     });
@@ -40,7 +40,8 @@ document.getElementById("export").onclick = () => {
 
     chrome.downloads.download({
       url,
-      filename: "recruiter_profiles.csv"
+      filename: "linkedin_recruiter_profiles.csv",
+      saveAs: true
     });
   });
 };
