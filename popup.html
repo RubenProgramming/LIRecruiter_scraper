@@ -1,28 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
   <head>
     <meta charset="UTF-8" />
-    <title>Recruiter Capture</title>
+    <title>FLOW · Recruiter Talentpool</title>
+
+    <!-- FLOW fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:ital,wght@0,400;0,900;1,900&display=swap"
+      rel="stylesheet"
+    />
 
     <style>
       body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial;
+        font-family: "Archivo", Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #1a1a1a;
+        background: #ffffff;
+        width: 260px;
         padding: 12px;
-        width: 240px;
         box-sizing: border-box;
       }
 
-      h1 {
+      /* Header */
+      .header {
+        background: #0a0a0a;
+        padding: 10px 12px;
+        margin: -12px -12px 12px -12px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .logo {
+        font-family: "Archivo", Arial, sans-serif;
+        font-style: italic;
+        font-weight: 900;
+        font-size: 18px;
+        color: #ffffff;
+      }
+
+      .chevron {
+        color: #e63946;
+        margin-left: 4px;
+        font-size: 1.4em;
+        position: relative;
+        top: 2px;
+      }
+
+      /* Section title */
+      .section-title {
+        font-family: "Archivo Black", Arial, sans-serif;
         font-size: 14px;
-        margin: 0 0 8px 0;
+        text-transform: uppercase;
+        margin-bottom: 8px;
       }
 
+      /* Counter block */
       .counter {
-        font-size: 13px;
-        margin-bottom: 10px;
-        font-weight: 500;
+        border: 1px solid #0a0a0a;
+        padding: 8px 10px;
+        margin-bottom: 12px;
+        font-weight: 900;
       }
 
+      /* Actions */
       .actions {
         display: flex;
         flex-direction: column;
@@ -30,35 +72,75 @@
       }
 
       button {
-        width: 100%;
-        padding: 8px;
+        font-family: "Archivo", Arial, sans-serif;
         font-size: 13px;
+        padding: 6px 10px;
+        background: #ffffff;
+        border: 1px solid #0a0a0a;
         cursor: pointer;
+        text-align: left;
       }
 
-      .secondary {
-        background: #f2f2f2;
-        border: 1px solid #ccc;
+      button:hover {
+        background: #f3ebde;
       }
 
       .danger {
-        background: #ffecec;
-        border: 1px solid #ffb3b3;
+        font-weight: 900;
+      }
+
+      .status {
+        font-size: 12px;
+        margin-top: 6px;
+        margin-bottom: 10px;
+      }
+
+      .status strong {
+        font-weight: 900;
+      }
+
+      .status--actief strong {
+        color: #15803d; /* rustig groen */
+      }
+
+      .status--gestopt strong {
+        color: #b91c1c; /* rustig rood */
+      }
+
+      /* Footer note */
+      .footer {
+        font-size: 10px;
+        font-style: italic;
+        color: #666;
+        margin-top: 10px;
+        padding-left: 6px;
+        border-left: 3px solid #0a0a0a;
       }
     </style>
   </head>
 
   <body>
-    <h1>Recruiter Capture</h1>
+    <div class="header">
+      <div class="logo">FLOW<span class="chevron">›</span></div>
+    </div>
 
-    <div class="counter" id="count">0 profiles captured</div>
+    <div class="section-title">
+      Recruiter Talentpool<span class="chevron">›</span>
+    </div>
+
+    <div class="counter" id="count">0 profielen verzameld</div>
 
     <div class="actions">
-      <button id="start">Start capturing</button>
-      <button id="stop" class="secondary">Stop capturing</button>
-      <button id="export">Export CSV</button>
-      <button id="clear" class="danger">Clear data</button>
+      <button id="start">› Start verzamelen</button>
+      <button id="stop">› Stop verzamelen</button>
+      <button id="export">› Exporteren (CSV)</button>
+      <button id="sendWebhook">› Versturen naar webhook</button>
+      <button id="clear" class="danger">› Data wissen</button>
     </div>
+
+    <div class="status" id="status">Status: <strong>GESTOPT</strong></div>
+
+    <div class="footer">Intern hulpmiddel · FLOW</div>
 
     <script src="popup.js"></script>
   </body>

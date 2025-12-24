@@ -1,8 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "Recruiter Profile Capture",
+  "name": "FLOW - Recruiter Talentpool Extractor",
   "version": "1.0",
-  "description": "Capture LinkedIn profile URLs from Recruiter projects while scrolling",
+  "description": "Haal jouw leads uit LinkedIn Recruiter Projecten",
+
+  "icons": {
+    "16": "icons/flow.png",
+    "32": "icons/flow.png",
+    "48": "icons/flow.png",
+    "128": "icons/flow.png"
+  },
+
   "permissions": ["storage", "activeTab", "scripting", "downloads"],
   "host_permissions": [
     "https://www.linkedin.com/*"
@@ -12,8 +20,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/talent/*"],
-      "js": ["content.js"]
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ]
 }

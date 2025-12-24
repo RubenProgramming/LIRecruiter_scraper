@@ -1,9 +1,17 @@
 let profiles = new Map();
-let capturing = true; // automatisch aan
+let capturing = false;
+let observer = null;
 
-/**
- * Extract recruiter profile links from DOM
- */
+/* ------------------------
+   STATUS
+------------------------- */
+function setStatus(status) {
+  chrome.storage.local.set({ captureStatus: status });
+}
+
+/* ------------------------
+   EXTRACTION
+------------------------- */
 function extractRecruiterProfileLinks() {
   if (!capturing) return;
 
@@ -15,9 +23,7 @@ function extractRecruiterProfileLinks() {
     const url = a.href;
     if (!url || !url.includes("/talent/profile/")) return;
 
-    // strip tracking if desired
     const cleanUrl = url.split("&trk=")[0];
-
     if (profiles.has(cleanUrl)) return;
 
     profiles.set(cleanUrl, {
@@ -31,39 +37,65 @@ function extractRecruiterProfileLinks() {
   });
 }
 
-/**
- * Observe DOM for lazy-loaded candidates
- */
-const observer = new MutationObserver(() => {
-  extractRecruiterProfileLinks();
-});
+/* ------------------------
+   OBSERVER CONTROL
+------------------------- */
+function startObserver() {
+  if (observer) return;
 
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+  observer = new MutationObserver(() => {
+    extractRecruiterProfileLinks();
+  });
 
-/**
- * Messages from popup
- */
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+function stopObserver() {
+  if (!observer) return;
+  observer.disconnect();
+  observer = null;
+}
+
+/* ------------------------
+   MESSAGE HANDLER
+------------------------- */
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "STOP") {
-    capturing = false;
-    sendResponse({ status: "stopped" });
-  }
 
   if (msg.type === "START") {
     capturing = true;
+    setStatus("ACTIEF");
+    startObserver();
     extractRecruiterProfileLinks();
     sendResponse({ status: "started" });
   }
 
+  if (msg.type === "STOP") {
+    capturing = false;
+    setStatus("GESTOPT");
+    stopObserver();
+    sendResponse({ status: "stopped" });
+  }
+
   if (msg.type === "CLEAR") {
+    capturing = false;
+    stopObserver();
     profiles.clear();
-    chrome.storage.local.remove("recruiterProfiles");
-    sendResponse({ status: "cleared" });
+
+    chrome.storage.local.set({
+      recruiterProfiles: [],
+      captureStatus: "GESTOPT"
+    }, () => {
+      sendResponse({ status: "cleared" });
+    });
+
+    return true;
   }
 });
 
-// initial scan (voor wat al zichtbaar is)
-extractRecruiterProfileLinks();
+/* ------------------------
+   INIT
+------------------------- */
+setStatus("GESTOPT");
